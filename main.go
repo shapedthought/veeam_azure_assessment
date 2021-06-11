@@ -132,10 +132,16 @@ func main() {
 
 	var to = token.AccessToken
 
+	// Channel
+
+	ch := make(chan []byte)
+
 	// about
 	ab := fmt.Sprintf("https://%s/api/v2/system/about", server)
 
-	d := getData(to, ab, client, tr)
+	getData(to, ab, client, tr, ch)
+
+	d := <-ch
 
 	var sd AboutServer
 
@@ -211,7 +217,7 @@ func main() {
 	}
 }
 
-func getData(t string, cs string, cl *http.Client, tr *http.Transport) []byte {
+func getData(t string, cs string, cl *http.Client, tr *http.Transport, ch chan []byte) {
 
 	req, _ := http.NewRequest("GET", cs, nil)
 	req.Header.Add("accept", "application/json")
@@ -228,5 +234,6 @@ func getData(t string, cs string, cl *http.Client, tr *http.Transport) []byte {
 		log.Panicln(err)
 	}
 
-	return bo
+	ch <- bo
+	close(ch)
 }
