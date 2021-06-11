@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"sync"
 	"text/template"
 	"time"
 )
@@ -132,28 +133,31 @@ func main() {
 
 	var to = token.AccessToken
 
-	// Channel
-
-	ch := make(chan []byte)
+	var wg sync.WaitGroup
 
 	// about
+	wg.Add(1)
+	cha := make(chan []byte)
 	ab := fmt.Sprintf("https://%s/api/v2/system/about", server)
 
-	getData(to, ab, client, tr, ch)
+	go getData(to, ab, client, tr, cha, &wg)
 
-	d := <-ch
+	d := <-cha
 
 	var sd AboutServer
 
 	json.Unmarshal(d, &sd)
-
-	// overview
-	ov := fmt.Sprintf("https://%s/api/v2/system/serverInfo", server)
-
-	c := getData(to, ov, client, tr)
-
 	version := sd.ServerVersion
 	workerVersion := sd.WorkerVersion
+
+	// overview
+	wg.Add(1)
+	chb := make(chan []byte)
+	ov := fmt.Sprintf("https://%s/api/v2/system/serverInfo", server)
+
+	go getData(to, ov, client, tr, chb, &wg)
+
+	c := <-chb
 
 	var si ServerInfo
 
@@ -173,8 +177,11 @@ func main() {
 	ses := fmt.Sprintf("https://%s/api/v2/jobSessions?Types=PolicyBackup&Types=PolicySnapshot", server)
 
 	var sin SessionInfo
+	wg.Add(1)
+	chc := make(chan []byte)
+	go getData(to, ses, client, tr, chc, &wg)
 
-	e := getData(to, ses, client, tr)
+	e := <-chc
 
 	json.Unmarshal(e, &sin)
 
@@ -186,14 +193,20 @@ func main() {
 	}
 
 	var sessLog []SessionLog
+	chf := make(chan []byte)
+	var f []byte
 
 	for _, s := range sesId {
 		var sessl SessionLog
+		wg.Add(1)
 		sesl := fmt.Sprintf("https://%s/api/v2/jobSessions/%s/log", server, s)
-		f := getData(to, sesl, client, tr)
+		go getData(to, sesl, client, tr, chf, &wg)
+		f = <-chf
 		json.Unmarshal(f, &sessl)
 		sessLog = append(sessLog, sessl)
 	}
+
+	wg.Wait()
 
 	output := OutputData{
 		Version:       version,
@@ -217,7 +230,7 @@ func main() {
 	}
 }
 
-func getData(t string, cs string, cl *http.Client, tr *http.Transport, ch chan []byte) {
+func getData(t string, cs string, cl *http.Client, tr *http.Transport, ch chan []byte, wg *sync.WaitGroup) {
 
 	req, _ := http.NewRequest("GET", cs, nil)
 	req.Header.Add("accept", "application/json")
@@ -235,5 +248,5 @@ func getData(t string, cs string, cl *http.Client, tr *http.Transport, ch chan [
 	}
 
 	ch <- bo
-	close(ch)
+	wg.Done()
 }
