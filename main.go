@@ -76,13 +76,24 @@ type OutputData struct {
 
 var tpl *template.Template
 
-func main() {
-	// uname := "ed"
-	// server := "51.105.4.34"
-	// pass := "Jiu^1^jitsu-"
+var fm = template.FuncMap{
+	"df": dataFormat,
+	"dr": durationTime,
+}
 
-	// 51.105.4.34 Jiu^1^jitsu- ed
-	// backup vm = azureuser
+func dataFormat(c string) string {
+	d := strings.Split(c, ".")
+	dd := strings.Split(d[0], "T")
+	t := fmt.Sprintf("%s %s", dd[1], dd[0])
+	return t
+}
+
+func durationTime(c string) string {
+	d := strings.Split(c, ".")
+	return d[0]
+}
+
+func main() {
 
 	var uname string
 	var server string
@@ -126,10 +137,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	var token TokenModel
-
 	json.Unmarshal(body, &token)
+
+	// write to file
+	_ = ioutil.WriteFile("creds.json", body, 0644)
 
 	var to = token.AccessToken
 
@@ -223,7 +235,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	tpl = template.Must(template.New("").ParseFiles("tpl.gohtml"))
+	tpl = template.Must(template.New("").Funcs(fm).ParseFiles("tpl.gohtml"))
 	err = tpl.ExecuteTemplate(nf, "tpl.gohtml", output)
 	if err != nil {
 		log.Fatal(err)
@@ -231,7 +243,6 @@ func main() {
 }
 
 func getData(t string, cs string, cl *http.Client, tr *http.Transport, ch chan []byte, wg *sync.WaitGroup) {
-
 	req, _ := http.NewRequest("GET", cs, nil)
 	req.Header.Add("accept", "application/json")
 	req.Header.Add("Authorization", "Bearer "+t)

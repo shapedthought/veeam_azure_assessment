@@ -18,10 +18,7 @@
       <div class="col">
 				<h2>Azure Backup Report</h2>
 				<hr>
-        <h3>Version: {{ .Version }}</h3>
-        <h3>Worker Version: {{ .WorkerVersion }}</h3>
-        <h3>Server Name: {{ .ServerName }}</h3>
-        <h3>Azure Region: {{ .AzureRegion }}</h3>
+        <p>Version: {{ .Version }} | Worker Version: {{ .WorkerVersion }} | Server Name: {{ .ServerName }} | Azure Region: {{ .AzureRegion }} </p>
       </div>
     </div>
     <div class="row">
@@ -45,9 +42,9 @@
 							<td>{{ .Type }}</td>
 							<td>{{ .BackupJobInfo.ProtectedInstancesCount }}</td>
 							<td>{{ .Status }}</td>
-							<td>{{ .ExecutionStartTime }}</td>
-							<td>{{ .ExecutionStopTime }}</td>
-							<td>{{ .ExecutionDuration }}</td>
+							<td>{{ df .ExecutionStartTime }}</td>
+							<td>{{ df .ExecutionStopTime }}</td>
+							<td>{{ dr .ExecutionDuration }}</td>
 						</tr>
 						{{ end }}
 				</tbody>
@@ -71,11 +68,11 @@
 					{{ range .SessionLog}}
 						{{ range .Log }}
 						<tr>
-							<th scope="row">{{ .LogTime }}</th>
+							<th scope="row">{{ df .LogTime }}</th>
 							<td>{{ .Status }}</td>
 							<td>{{ .Message }}</td>
-							<td>{{ .ExecutionStartTime }}</td>
-							<td>{{ .ExecutionDuration }}</td>
+							<td>{{ df .ExecutionStartTime }}</td>
+							<td>{{ dr .ExecutionDuration }}</td>
 						</tr>
 							{{ end }}
 						{{ end }}
