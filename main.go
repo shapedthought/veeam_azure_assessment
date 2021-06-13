@@ -2,8 +2,8 @@ package main
 
 import (
 	"crypto/tls"
+	_ "embed"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -14,6 +14,8 @@ import (
 	"sync"
 	"text/template"
 	"time"
+
+	"gopkg.in/yaml.v2"
 )
 
 type TokenLoginSpec struct {
@@ -74,6 +76,17 @@ type OutputData struct {
 	SessionLog  []SessionLog
 }
 
+type CredSpec struct {
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
+	Server   string `yaml:"server"`
+}
+
+type SessionId struct {
+	SessionId  string
+	PolicyName string
+}
+
 var tpl *template.Template
 
 var fm = template.FuncMap{
@@ -95,15 +108,21 @@ func durationTime(c string) string {
 
 func main() {
 
-	var uname string
-	var server string
-	var pass string
+	var creds CredSpec
+	yml, err := os.Open("config.yaml")
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	flag.StringVar(&uname, "u", "uname", "username")
-	flag.StringVar(&server, "s", "server", "server address")
-	flag.StringVar(&pass, "p", "password", "server password")
+	b, err := ioutil.ReadAll(yml)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	flag.Parse()
+	yaml.Unmarshal(b, &creds)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -111,12 +130,12 @@ func main() {
 
 	client := &http.Client{Transport: tr}
 
-	connstring := fmt.Sprintf("https://%s/api/oauth2/token", server)
+	connstring := fmt.Sprintf("https://%s/api/oauth2/token", creds.Server)
 
 	data := url.Values{}
 	data.Set("grant_type", "Password")
-	data.Set("Username", uname)
-	data.Set("Password", pass)
+	data.Set("Username", creds.Username)
+	data.Set("Password", creds.Password)
 
 	r, err := http.NewRequest("POST", connstring, strings.NewReader(data.Encode()))
 	if err != nil {
@@ -150,7 +169,7 @@ func main() {
 	// about
 	wg.Add(1)
 	cha := make(chan []byte)
-	ab := fmt.Sprintf("https://%s/api/v2/system/about", server)
+	ab := fmt.Sprintf("https://%s/api/v2/system/about", creds.Server)
 
 	go getData(to, ab, client, tr, cha, &wg)
 
@@ -165,7 +184,7 @@ func main() {
 	// overview
 	wg.Add(1)
 	chb := make(chan []byte)
-	ov := fmt.Sprintf("https://%s/api/v2/system/serverInfo", server)
+	ov := fmt.Sprintf("https://%s/api/v2/system/serverInfo", creds.Server)
 
 	go getData(to, ov, client, tr, chb, &wg)
 
@@ -186,7 +205,7 @@ func main() {
 	fString := tFrom.Format("2006-01-02")
 
 	// ses := fmt.Sprintf("https://%s/api/v2/jobSessions?Types=PolicyBackup&Types=PolicySnapshot&FromUtc=%s&ToUtc=%s", server, fString, tString)
-	ses := fmt.Sprintf("https://%s/api/v2/jobSessions?Types=PolicyBackup&Types=PolicySnapshot", server)
+	ses := fmt.Sprintf("https://%s/api/v2/jobSessions?Types=PolicyBackup&Types=PolicySnapshot", creds.Server)
 
 	var sin SessionInfo
 	wg.Add(1)
@@ -197,26 +216,44 @@ func main() {
 
 	json.Unmarshal(e, &sin)
 
-	var sesId []string
+	// var sesId []string
+
+	var sesIdStruct []SessionId
 
 	// Get the session ID from each session
 	for _, s := range sin.Results {
-		sesId = append(sesId, s.ID)
+		se := SessionId{
+			SessionId:  s.ID,
+			PolicyName: s.BackupJobInfo.PolicyName,
+		}
+		// fmt.Println(se)
+		sesIdStruct = append(sesIdStruct, se)
+		// sesId = append(sesId, s.ID)
 	}
 
 	var sessLog []SessionLog
 	chf := make(chan []byte)
 	var f []byte
 
-	for _, s := range sesId {
+	for _, s := range sesIdStruct {
 		var sessl SessionLog
 		wg.Add(1)
-		sesl := fmt.Sprintf("https://%s/api/v2/jobSessions/%s/log", server, s)
+		sesl := fmt.Sprintf("https://%s/api/v2/jobSessions/%s/log", creds.Server, s.SessionId)
 		go getData(to, sesl, client, tr, chf, &wg)
 		f = <-chf
 		json.Unmarshal(f, &sessl)
 		sessLog = append(sessLog, sessl)
 	}
+
+	// for _, s := range sesId {
+	// 	var sessl SessionLog
+	// 	wg.Add(1)
+	// 	sesl := fmt.Sprintf("https://%s/api/v2/jobSessions/%s/log", creds.Server, s)
+	// 	go getData(to, sesl, client, tr, chf, &wg)
+	// 	f = <-chf
+	// 	json.Unmarshal(f, &sessl)
+	// 	sessLog = append(sessLog, sessl)
+	// }
 
 	wg.Wait()
 
@@ -248,6 +285,10 @@ func getData(t string, cs string, cl *http.Client, tr *http.Transport, ch chan [
 	req.Header.Add("Authorization", "Bearer "+t)
 
 	res, err := cl.Do(req)
+
+	if res.StatusCode != 200 {
+		fmt.Println(cs, res.Status)
+	}
 
 	if err != nil {
 		log.Panicln(err)

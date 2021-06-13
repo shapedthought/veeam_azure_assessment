@@ -27,6 +27,7 @@
         <thead>
           <tr>
             <th scope="col">Job Name</th>
+            <th scope="col">Session ID</th>
             <th scope="col">Job Type</th>
             <th scope="col">Protected Instances</th>
             <th scope="col">Status</th>
@@ -39,6 +40,7 @@
 					{{ range .SessionInfo.Results}}
 						<tr>
 							<th scope="row">{{ .BackupJobInfo.PolicyName }}</th>
+							<td>{{ .ID }}</td>
 							<td>{{ .Type }}</td>
 							<td>{{ .BackupJobInfo.ProtectedInstancesCount }}</td>
 							<td>{{ .Status }}</td>
@@ -54,6 +56,9 @@
 
 		<div class="row">
       <div class="col">
+				<h3 class="mt-4">Logs</h3>
+				{{ range .SessionLog}}
+				<h5>Session ID: {{.JobSessionID}}</h5>
 				<table class="table">
         <thead>
           <tr>
@@ -65,7 +70,6 @@
           </tr>
         </thead>
 				<tbody>
-					{{ range .SessionLog}}
 						{{ range .Log }}
 						<tr>
 							<th scope="row">{{ df .LogTime }}</th>
@@ -75,9 +79,9 @@
 							<td>{{ dr .ExecutionDuration }}</td>
 						</tr>
 							{{ end }}
-						{{ end }}
 				</tbody>
 			</table>
+			{{ end }}
       </div>
     </div>
 	</div>
