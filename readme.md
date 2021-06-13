@@ -27,5 +27,8 @@ serverConfig:
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;to: "example2@email.com"
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;smtpHost: "smtp.server.com"
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;smtpPort: "587"
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;smtpPass: "smtpPass"
+
+Note that the top section is for your instance of VBAzure.
 
 The programe doesn't include any schedule but can be tied into Windows schedular or if compiled on Linux, a Cronjob. 

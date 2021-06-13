@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/tls"
 	_ "embed"
 	"encoding/json"
@@ -8,6 +9,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/smtp"
 	"net/url"
 	"os"
 	"strings"
@@ -77,9 +79,15 @@ type OutputData struct {
 }
 
 type CredSpec struct {
-	Username string `yaml:"username"`
-	Password string `yaml:"password"`
-	Server   string `yaml:"server"`
+	Username     string `yaml:"username"`
+	Password     string `yaml:"password"`
+	Server       string `yaml:"server"`
+	ServerConfig struct {
+		From     string `yaml:"from"`
+		To       string `yaml:"to"`
+		SmtpHost string `yaml:"smtpHost"`
+		SmtpPort string `yaml:"smtpPort"`
+	} `yaml:"serverConfig"`
 }
 
 type SessionId struct {
@@ -268,12 +276,21 @@ func main() {
 		SessionLog:    sessLog,
 	}
 
-	nf, err := os.Create("index.html")
+	// nf, err := os.Create("index.html")
 	if err != nil {
 		log.Fatal(err)
 	}
 	tpl = template.Must(template.New("").Funcs(fm).ParseFiles("tpl.gohtml"))
-	err = tpl.ExecuteTemplate(nf, "tpl.gohtml", output)
+
+	sendEmail(
+		creds.ServerConfig.From,
+		creds.ServerConfig.To,
+		creds.ServerConfig.SmtpHost,
+		creds.ServerConfig.SmtpPort,
+		creds.Password,
+		tpl,
+		output)
+	// err = tpl.ExecuteTemplate(nf, "tpl.gohtml", output)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -301,4 +318,34 @@ func getData(t string, cs string, cl *http.Client, tr *http.Transport, ch chan [
 
 	ch <- bo
 	wg.Done()
+}
+
+func sendEmail(from string, to string, serv string, port string, pass string, tpl *template.Template, output OutputData) {
+	// https://www.loginradius.com/blog/async/sending-emails-with-golang/
+
+	var body bytes.Buffer
+
+	mimeHeaders := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
+	_, err := body.Write([]byte(fmt.Sprintf("Subject: This is a test subject \n%s\n\n", mimeHeaders)))
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = tpl.ExecuteTemplate(&body, "tpl.gohtml", output)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	tos := []string{
+		to,
+	}
+
+	auth := smtp.PlainAuth("", from, pass, serv)
+	host := fmt.Sprintf("%s:%s", serv, port)
+	fmt.Println(host)
+	err = smtp.SendMail(host, auth, from, tos, body.Bytes())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("Email Sent!")
 }
