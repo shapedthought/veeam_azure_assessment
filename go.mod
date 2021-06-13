@@ -1,4 +1,4 @@
-module github.com/shapedthought/azure_test
+module github.com/shapedthought/go_azure_assessment
 
 go 1.16
 
