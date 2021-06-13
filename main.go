@@ -87,6 +87,7 @@ type CredSpec struct {
 		To       string `yaml:"to"`
 		SmtpHost string `yaml:"smtpHost"`
 		SmtpPort string `yaml:"smtpPort"`
+		SmtpPass string `yaml:"smtpPass"`
 	} `yaml:"serverConfig"`
 }
 
@@ -287,7 +288,7 @@ func main() {
 		creds.ServerConfig.To,
 		creds.ServerConfig.SmtpHost,
 		creds.ServerConfig.SmtpPort,
-		creds.Password,
+		creds.ServerConfig.SmtpPass,
 		tpl,
 		output)
 	// err = tpl.ExecuteTemplate(nf, "tpl.gohtml", output)
@@ -325,8 +326,8 @@ func sendEmail(from string, to string, serv string, port string, pass string, tp
 
 	var body bytes.Buffer
 
-	mimeHeaders := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
-	_, err := body.Write([]byte(fmt.Sprintf("Subject: This is a test subject \n%s\n\n", mimeHeaders)))
+	mimeHeaders := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";"
+	_, err := body.Write([]byte(fmt.Sprintf("To: %s;\nFrom: %s;\nSubject: Azure Backup Report \n%s\n\n", to, from, mimeHeaders)))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -341,7 +342,7 @@ func sendEmail(from string, to string, serv string, port string, pass string, tp
 
 	auth := smtp.PlainAuth("", from, pass, serv)
 	host := fmt.Sprintf("%s:%s", serv, port)
-	fmt.Println(host)
+	// fmt.Println(body.String())
 	err = smtp.SendMail(host, auth, from, tos, body.Bytes())
 	if err != nil {
 		log.Fatal(err)
