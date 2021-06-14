@@ -1,6 +1,6 @@
 # Go Veeam Azure Assessment
 
-This is a project that builds off the excellent work that my friend Jorge De La Cruze has done in puttig together a Azure job report. I'm also doing this in an effort to get Jorge to convert to Go!
+This is a project that builds off the excellent work that my friend Jorge De La Cruze has done in putting together a Azure job report. I'm also doing this in an effort to get Jorge to convert to Go!
 
 https://jorgedelacruz.uk/2021/06/04/veeam-html-daily-report-for-veeam-backup-for-azure-is-now-available-community-project/
 
@@ -15,11 +15,14 @@ Some of the benefits of using Go are:
 
 My hope is that others can foke this project and make it better. There is also plenty of scope to extend this to other services like AWS.
 
-A <b>config.yaml</b> file is required for this to work and it needs to be in the root of the directory where the binary is run from. 
-
 To run the binary via PowerShell:
 
 	./go_azure_assessment.exe
+
+
+A <b>config.yaml</b> file is required for this to work and it needs to be in the root of the directory where the binary is run from. 
+
+
 
 The YAML format is below:
 
