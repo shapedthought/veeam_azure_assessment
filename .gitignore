@@ -2,3 +2,7 @@
 *.zip
 *.json
 /azure_test
+*.html
+index.html
+*.yaml
+.gitignore

@@ -18,10 +18,7 @@
       <div class="col">
 				<h2>Azure Backup Report</h2>
 				<hr>
-        <h3>Version: {{ .Version }}</h3>
-        <h3>Worker Version: {{ .WorkerVersion }}</h3>
-        <h3>Server Name: {{ .ServerName }}</h3>
-        <h3>Azure Region: {{ .AzureRegion }}</h3>
+        <p>Version: {{ .Version }} | Worker Version: {{ .WorkerVersion }} | Server Name: {{ .ServerName }} | Azure Region: {{ .AzureRegion }} </p>
       </div>
     </div>
     <div class="row">
@@ -30,6 +27,7 @@
         <thead>
           <tr>
             <th scope="col">Job Name</th>
+            <th scope="col">Session ID</th>
             <th scope="col">Job Type</th>
             <th scope="col">Protected Instances</th>
             <th scope="col">Status</th>
@@ -42,12 +40,13 @@
 					{{ range .SessionInfo.Results}}
 						<tr>
 							<th scope="row">{{ .BackupJobInfo.PolicyName }}</th>
+							<td>{{ .ID }}</td>
 							<td>{{ .Type }}</td>
 							<td>{{ .BackupJobInfo.ProtectedInstancesCount }}</td>
 							<td>{{ .Status }}</td>
-							<td>{{ .ExecutionStartTime }}</td>
-							<td>{{ .ExecutionStopTime }}</td>
-							<td>{{ .ExecutionDuration }}</td>
+							<td>{{ df .ExecutionStartTime }}</td>
+							<td>{{ df .ExecutionStopTime }}</td>
+							<td>{{ dr .ExecutionDuration }}</td>
 						</tr>
 						{{ end }}
 				</tbody>
@@ -57,6 +56,9 @@
 
 		<div class="row">
       <div class="col">
+				<h3 class="mt-4">Logs</h3>
+				{{ range .SessionLog}}
+				<h5>Session ID: {{.JobSessionID}}</h5>
 				<table class="table">
         <thead>
           <tr>
@@ -68,19 +70,18 @@
           </tr>
         </thead>
 				<tbody>
-					{{ range .SessionLog}}
 						{{ range .Log }}
 						<tr>
-							<th scope="row">{{ .LogTime }}</th>
+							<th scope="row">{{ df .LogTime }}</th>
 							<td>{{ .Status }}</td>
 							<td>{{ .Message }}</td>
-							<td>{{ .ExecutionStartTime }}</td>
-							<td>{{ .ExecutionDuration }}</td>
+							<td>{{ df .ExecutionStartTime }}</td>
+							<td>{{ dr .ExecutionDuration }}</td>
 						</tr>
 							{{ end }}
-						{{ end }}
 				</tbody>
 			</table>
+			{{ end }}
       </div>
     </div>
 	</div>
