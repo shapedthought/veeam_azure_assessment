@@ -2,6 +2,7 @@
 *.zip
 *.json
 /azure_test
+/go_azure_assessment
 *.html
 index.html
 *.yaml

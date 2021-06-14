@@ -17,7 +17,11 @@ My hope is that others can foke this project and make it better. There is also p
 
 A <b>config.yaml</b> file is required for this to work and it needs to be in the root of the directory where the binary is run from. 
 
-The format is below:
+To run the binary via PowerShell:
+
+	./go_azure_assessment.exe
+
+The YAML format is below:
 
 	// Azure creds first
 	server: "5.5.5.5"
