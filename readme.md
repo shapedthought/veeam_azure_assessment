@@ -15,10 +15,11 @@ Some of the benefits of using Go are:
 
 My hope is that others can foke this project and make it better. There is also plenty of scope to extend this to other services like AWS.
 
-A config.yaml file is required for this to work and it needs to be in the root of the directory where the binary is run from. 
+A <b>config.yaml</b> file is required for this to work and it needs to be in the root of the directory where the binary is run from. 
 
 The format is below:
 
+	// Azure creds first
 	server: "5.5.5.5"
 	username: "username" 
 	password: "password"
@@ -32,6 +33,8 @@ The format is below:
 Note that this uses the PlainAuth method which means that TLS is required or it will fail. This means you will need to use <b>port 587</b> though it isn't hardcoded.
 
 https://golang.org/pkg/net/smtp/
+
+You also need the <b>tpl.gohtml</b> file in the root directory as well as the programe uses it to populate the HTML.
 
 The programe doesn't include any schedule but can be tied into Windows schedular or if compiled on Linux, a cron job. 
 
