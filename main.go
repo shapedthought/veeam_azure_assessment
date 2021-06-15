@@ -12,6 +12,7 @@ import (
 	"net/smtp"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"text/template"
@@ -82,6 +83,7 @@ type CredSpec struct {
 	Username     string `yaml:"username"`
 	Password     string `yaml:"password"`
 	Server       string `yaml:"server"`
+	TimeDays     string `yaml:"timeDays"`
 	ServerConfig struct {
 		From     string `yaml:"from"`
 		To       string `yaml:"to"`
@@ -105,9 +107,13 @@ var fm = template.FuncMap{
 
 func dataFormat(c string) string {
 	d := strings.Split(c, ".")
-	dd := strings.Split(d[0], "T")
-	t := fmt.Sprintf("%s %s", dd[1], dd[0])
-	return t
+	if len(d) > 1 {
+		dd := strings.Split(d[0], "T")
+		t := fmt.Sprintf("%s %s", dd[1], dd[0])
+		return t
+	} else {
+		return c
+	}
 }
 
 func durationTime(c string) string {
@@ -169,7 +175,7 @@ func main() {
 	json.Unmarshal(body, &token)
 
 	// write to file
-	_ = ioutil.WriteFile("creds.json", body, 0644)
+	// _ = ioutil.WriteFile("creds.json", body, 0644)
 
 	var to = token.AccessToken
 
@@ -208,13 +214,14 @@ func main() {
 	// Azure sessions
 	// reportDateTo=$(date "+%Y-%m-%d")
 	// reportDateFrom=$(date -d "$reportDateTo - 1 day" '+%Y-%m-%d')
+	i, _ := strconv.Atoi(creds.TimeDays)
 	tTo := time.Now()
-	tFrom := tTo.AddDate(0, 0, 1)
+	tFrom := tTo.AddDate(0, 0, -i)
 	tString := tTo.Format("2006-01-02")
 	fString := tFrom.Format("2006-01-02")
 
-	// ses := fmt.Sprintf("https://%s/api/v2/jobSessions?Types=PolicyBackup&Types=PolicySnapshot&FromUtc=%s&ToUtc=%s", server, fString, tString)
-	ses := fmt.Sprintf("https://%s/api/v2/jobSessions?Types=PolicyBackup&Types=PolicySnapshot", creds.Server)
+	ses := fmt.Sprintf("https://%s/api/v2/jobSessions?Types=PolicyBackup&Types=PolicySnapshot&FromUtc=%s&ToUtc=%s", creds.Server, fString, tString)
+	// ses := fmt.Sprintf("https://%s/api/v2/jobSessions?Types=PolicyBackup&Types=PolicySnapshot", creds.Server)
 
 	var sin SessionInfo
 	wg.Add(1)
@@ -243,6 +250,7 @@ func main() {
 	var sessLog []SessionLog
 	chf := make(chan []byte)
 	var f []byte
+	// check := new(bytes.Buffer)
 
 	for _, s := range sesIdStruct {
 		var sessl SessionLog
@@ -250,7 +258,11 @@ func main() {
 		sesl := fmt.Sprintf("https://%s/api/v2/jobSessions/%s/log", creds.Server, s.SessionId)
 		go getData(to, sesl, client, tr, chf, &wg)
 		f = <-chf
-		json.Unmarshal(f, &sessl)
+		// check.Write(f)
+		err = json.Unmarshal(f, &sessl)
+		if err != nil {
+			log.Fatal(err)
+		}
 		sessLog = append(sessLog, sessl)
 	}
 
@@ -277,6 +289,9 @@ func main() {
 		SessionLog:    sessLog,
 	}
 
+	// Maybe add this later
+	// _ = ioutil.WriteFile("data.json", check.Bytes(), 0644)
+
 	// nf, err := os.Create("index.html")
 	if err != nil {
 		log.Fatal(err)
@@ -291,6 +306,8 @@ func main() {
 		creds.ServerConfig.SmtpPass,
 		tpl,
 		output)
+
+	// fmt.Println(output)
 	// err = tpl.ExecuteTemplate(nf, "tpl.gohtml", output)
 	if err != nil {
 		log.Fatal(err)

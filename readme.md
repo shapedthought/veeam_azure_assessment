@@ -22,14 +22,13 @@ To run the binary via PowerShell:
 
 A <b>config.yaml</b> file is required for this to work and it needs to be in the root of the directory where the binary is run from. 
 
-
-
 The YAML format is below:
 
 	// Azure creds first
 	server: "5.5.5.5"
 	username: "username" 
 	password: "password"
+	timeDays: "1" // how many days back from today
 	serverConfig:
 	  from: "example@email.com"
 	  to: "example2@email.com"
