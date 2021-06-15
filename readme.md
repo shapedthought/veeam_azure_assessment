@@ -56,5 +56,5 @@ If you want to compile it for another architecture please refer to the Go docume
 
 ### To Do
 
-1. The date filtering isn't working currently so each report sends all job information.
+1. ~~The date filtering isn't working currently so each report sends all job information.~~
 2. General refactoring
