@@ -1,4 +1,4 @@
-# Go Veeam Azure Assessment
+# Go Veeam Azure Report
 
 This is a project that builds off the excellent work that my friend Jorge De La Cruze has done in putting together a Azure job report. I'm also doing this in an effort to get Jorge to convert to Go!
 
